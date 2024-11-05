@@ -1,1 +1,164 @@
-git init git add . git commit -m "first commit" git branch -M main git remote add origin git push -u origin main.
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match-3 Battle Game</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        #game { display: grid; grid-template-columns: repeat(8, 50px); gap: 2px; margin: 20px auto; }
+        .tile { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; font-weight: bold; }
+        .fire { background-color: red; }
+        .water { background-color: blue; }
+        .earth { background-color: green; }
+        .wind { background-color: purple; }
+        #stats { margin-top: 20px; }
+        button { margin-top: 10px; padding: 10px 20px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h1>Match-3 Battle Game</h1>
+    <div id="stats">
+        <p>Player HP: <span id="player-hp">100</span></p>
+        <p>Enemy HP: <span id="enemy-hp">100</span></p>
+    </div>
+    <div id="game"></div>
+    <button onclick="gameLoop()">Next Turn</button>
+
+    <script>
+        // Konfigurasi game dasar
+        const gridSize = 8;
+        const tileTypes = ["fire", "water", "earth", "wind"];
+        let grid = [];
+
+        // Karakter pemain dan musuh
+        let player = { hp: 100, attack: 10 };
+        let enemy = { hp: 100, attack: 8 };
+
+        // Inisialisasi grid dengan tile acak
+        function initGrid() {
+            for (let x = 0; x < gridSize; x++) {
+                grid[x] = [];
+                for (let y = 0; y < gridSize; y++) {
+                    grid[x][y] = tileTypes[Math.floor(Math.random() * tileTypes.length)];
+                }
+            }
+            renderGrid();
+        }
+
+        // Tampilkan grid ke HTML
+        function renderGrid() {
+            const gameContainer = document.getElementById("game");
+            gameContainer.innerHTML = '';
+            for (let x = 0; x < gridSize; x++) {
+                for (let y = 0; y < gridSize; y++) {
+                    const tile = document.createElement("div");
+                    tile.className = `tile ${grid[x][y]}`;
+                    tile.innerText = grid[x][y].charAt(0).toUpperCase();
+                    gameContainer.appendChild(tile);
+                }
+            }
+        }
+
+        // Mendeteksi match secara horizontal dan vertikal
+        function findMatches() {
+            let matches = [];
+            for (let x = 0; x < gridSize; x++) {
+                for (let y = 0; y < gridSize - 2; y++) {
+                    if (grid[x][y] === grid[x][y + 1] && grid[x][y] === grid[x][y + 2]) {
+                        matches.push({ x: x, y: y, type: grid[x][y] });
+                    }
+                }
+            }
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize - 2; x++) {
+                    if (grid[x][y] === grid[x + 1][y] && grid[x][y] === grid[x + 2][y]) {
+                        matches.push({ x: x, y: y, type: grid[x][y] });
+                    }
+                }
+            }
+            return matches;
+        }
+
+        // Terapkan damage sesuai tipe match
+        function applyDamage(matches) {
+            matches.forEach(match => {
+                switch (match.type) {
+                    case "fire":
+                        enemy.hp -= player.attack * 1.2;
+                        break;
+                    case "water":
+                        enemy.hp -= player.attack;
+                        break;
+                    case "earth":
+                        player.hp += 5;
+                        break;
+                    case "wind":
+                        enemy.hp -= player.attack * 0.8;
+                        break;
+                }
+            });
+            updateStats();
+        }
+
+        // Update tampilan HP di HTML
+        function updateStats() {
+            document.getElementById("player-hp").innerText = Math.max(player.hp, 0);
+            document.getElementById("enemy-hp").innerText = Math.max(enemy.hp, 0);
+        }
+
+        // Hapus match dari grid
+        function removeMatches(matches) {
+            matches.forEach(match => {
+                grid[match.x][match.y] = null;
+            });
+        }
+
+        // Isi grid dengan tile baru
+        function dropTiles() {
+            for (let y = gridSize - 1; y >= 0; y--) {
+                for (let x = 0; x < gridSize; x++) {
+                    if (grid[x][y] === null) {
+                        grid[x][y] = tileTypes[Math.floor(Math.random() * tileTypes.length)];
+                    }
+                }
+            }
+        }
+
+        // Jalankan loop game
+        function gameLoop() {
+            let matches = findMatches();
+            if (matches.length > 0) {
+                applyDamage(matches);
+                removeMatches(matches);
+                dropTiles();
+                renderGrid();
+            } else {
+                // Musuh menyerang jika tidak ada match
+                player.hp -= enemy.attack;
+                updateStats();
+            }
+
+            // Periksa kondisi akhir
+            if (player.hp <= 0) {
+                alert("Game Over! The enemy has won.");
+                resetGame();
+            } else if (enemy.hp <= 0) {
+                alert("Congratulations! You defeated the enemy.");
+                resetGame();
+            }
+        }
+
+        // Reset game
+        function resetGame() {
+            player.hp = 100;
+            enemy.hp = 100;
+            initGrid();
+            updateStats();
+        }
+
+        // Mulai game
+        initGrid();
+    </script>
+</body>
+</html>
